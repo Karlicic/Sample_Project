@@ -2,6 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Sample_Project.Model;
 using Sample_Project.Settings;
 using System.Text.Json.Serialization;
+using VDS.RDF;
+using VDS.RDF.Storage.Management;
+using VDS.RDF.Storage.Management.Provisioning;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +23,25 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection(AppSettings.AppDetails));
 
-var app = builder.Build();
+Options.HttpDebugging = true;
+
+const string SERVER_URL = "http://localhost:5820";
+const string STARDOG_USERNAME = "admin";
+const string STARDOG_PASSWORD = "admin";
+const string DATABASE_NAME = "MyDb";
+
+using (StardogServer stardog = new StardogServer(SERVER_URL, STARDOG_USERNAME, STARDOG_PASSWORD))
+{
+    if(stardog.ListStores().Contains(DATABASE_NAME))
+    {
+        stardog.DeleteStore(DATABASE_NAME);
+    }
+
+    IStoreTemplate template = stardog.GetDefaultTemplate(DATABASE_NAME);
+    stardog.CreateStore(template);
+}
+
+    var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
